@@ -44,9 +44,18 @@ cdef class NVList(object):
     cdef defs.nvlist_t *nvlist
     cdef NVList parent
 
-    def __init__(self, ignore_case=False):
+    def __init__(self, d=None, ignore_case=False):
         self.nvlist = defs.nvlist_create(0)
         self.parent = None
+
+        if d:
+            if isinstance(d, dict):
+                for k, v in d.items():
+                    self[k] = v
+
+            if isinstance(d, list):
+                for idx, i in enumerate(d):
+                    self[str(idx)] = i
 
     def __dealloc__(self):
         if self.parent is None:
@@ -74,6 +83,11 @@ cdef class NVList(object):
 
         if isinstance(value, str):
             defs.nvlist_add_string(self.nvlist, key, value)
+            return
+
+        if isinstance(value, (dict, list)):
+            nvl = <NVList>NVList(value)
+            defs.nvlist_add_nvlist(self.nvlist, key, nvl.nvlist)
             return
 
         if isinstance(value, NVList):
